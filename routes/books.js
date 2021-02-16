@@ -1,5 +1,6 @@
 const express = require('express');
 const BooksController = require('../controllers/BooksController');
+const fileMiddleware = require('../middleware/file');
 const router = express.Router();
 
 router.get('/books', BooksController.getBooks); // роут для получения всех книг
@@ -7,5 +8,7 @@ router.get('/books/:id', BooksController.getBook); // роут для получ
 router.post('/books', BooksController.createBook); // роут для создания книги
 router.put('/books/:id', BooksController.updateBook); // роут для редактирования книги
 router.delete('/books/:id', BooksController.deleteBook); // роут для удаления книги
+router.post('/books/:id/upload', fileMiddleware.single('cover-img'), BooksController.uploadCover); // роут для закачки обложки книги
+router.get('/books/:id/download', BooksController.downloadCover); // роут для скачивания обложки книги
 
 module.exports = router;

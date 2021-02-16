@@ -2,21 +2,23 @@ const Book = require('../models/Book');
 const store = require('../store/store');
 
 class BooksController {
-  getBooks(req, res) {
-    const data = store;
+  async getBooks(req, res) {
+    const data = await store.readFromDB();
     res.status(200).json({
       success: true,
+      quantity: data.length,
       data,
     });
   }
 
-  getBook(req, res) {
+  async getBook(req, res) {
     const { id } = req.params;
-    const book = store.find((item) => item.id === id);
+    const db = await store.readFromDB();
+    const book = db.find((item) => item.id === id);
     if (book) {
       res.status(200).json({
         success: true,
-        data,
+        data: book,
       });
     } else {
       res.status(404).json({
@@ -26,44 +28,24 @@ class BooksController {
     }
   }
 
-  createBook(req, res) {
-    const {
-      title,
-      description,
-      authors,
-      favorite,
-      fileCover,
-      fileName,
-    } = req.body;
-    const book = new Book(
-      title,
-      description,
-      authors,
-      favorite,
-      fileCover,
-      fileName
-    );
-    store.push(book);
+  async createBook(req, res) {
+    const { title, description, authors, favorite, fileCover, fileName } = req.body;
+    const book = new Book(title, description, authors, favorite, fileCover, fileName);
+    await store.writeInDB(book);
     res.status(201).json({
       success: true,
       data: book,
     });
   }
 
-  updateBook(req, res) {
-    const {
-      title,
-      description,
-      authors,
-      favorite,
-      fileCover,
-      fileName,
-    } = req.body;
+  async updateBook(req, res) {
+    const { title, description, authors, favorite, fileCover, fileName } = req.body;
     const { id } = req.params;
-    const updateBookIndex = store.findIndex((item) => item.id === id);
+    const db = await store.readFromDB();
+    const updateBookIndex = db.findIndex((item) => item.id === id);
     if (updateBookIndex !== -1) {
-      store[updateBookIndex] = {
-        ...store[updateBookIndex],
+      const updateBook = {
+        ...db[updateBookIndex],
         title,
         description,
         authors,
@@ -71,9 +53,11 @@ class BooksController {
         fileCover,
         fileName,
       };
+      db.splice(updateBookIndex, 1);
+      store.writeInDB(updateBook);
       res.status(200).json({
         success: true,
-        data: store[updateBookIndex],
+        data: updateBook,
       });
     } else {
       res.status(404).json({
@@ -83,13 +67,65 @@ class BooksController {
     }
   }
 
-  deleteBook(req, res) {
+  async deleteBook(req, res) {
     const { id } = req.params;
-    const deleteBookIndex = store.findIndex((item) => item.id === id);
+    const db = await store.readFromDB();
+    const deleteBookIndex = db.findIndex((item) => item.id === id);
     if (deleteBookIndex !== -1) {
-      store.splice(deleteBookIndex, 1);
+      db.splice(deleteBookIndex, 1);
+      store.deleteFromDB(db);
       res.status(200).json({
         success: true,
+      });
+      // store.writeDB();
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Book not found',
+      });
+    }
+  }
+
+  async uploadCover(req, res) {
+    const { id } = req.params;
+    const db = await store.readFromDB();
+    const findBookIndex = db.findIndex((item) => item.id === id);
+    if (findBookIndex !== -1) {
+      if (req.file) {
+        const { path } = req.file;
+        const updateBook = {
+          ...db[findBookIndex],
+          fileBook: path,
+        };
+        db.splice(findBookIndex, 1);
+        store.writeInDB(updateBook);
+        res.status(200).json({
+          success: true,
+          path,
+        });
+      } else {
+        res.json({
+          success: false,
+          path: null,
+        });
+      }
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Book not found',
+      });
+    }
+  }
+
+  async downloadCover(req, res) {
+    const { id } = req.params;
+    const db = await store.readFromDB();
+    const book = db.find((item) => item.id === id);
+    if (book) {
+      res.download(book.fileBook, 'cover.png', (err) => {
+        if (err) {
+          res.status(404).json();
+        }
       });
     } else {
       res.status(404).json({
