@@ -3,6 +3,7 @@ class Store {
   constructor() {
     this.db = [];
   }
+
   async createDB() {
     await fs.writeFile('db.json', JSON.stringify(this.db));
   }
@@ -16,6 +17,7 @@ class Store {
     this.db.push(data);
     await fs.writeFile('db.json', JSON.stringify(this.db));
   }
+
   async deleteFromDB(data) {
     this.db = data;
     await fs.writeFile('db.json', JSON.stringify(this.db));

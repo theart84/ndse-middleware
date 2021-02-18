@@ -1,5 +1,6 @@
 const Book = require('../models/Book');
 const store = require('../store/store');
+const path = require('path');
 
 class BooksController {
   async getBooks(req, res) {
@@ -45,13 +46,14 @@ class BooksController {
     const updateBookIndex = db.findIndex((item) => item.id === id);
     if (updateBookIndex !== -1) {
       const updateBook = {
-        ...db[updateBookIndex],
-        title,
-        description,
-        authors,
-        favorite,
-        fileCover,
-        fileName,
+        id: db[updateBookIndex].id,
+        title: title ? title : db[updateBookIndex].title,
+        description: description ? description : db[updateBookIndex].description,
+        authors: authors ? authors : db[updateBookIndex].authors,
+        favorite: favorite ? favorite : db[updateBookIndex].favorite,
+        fileCover: fileCover ? fileCover : db[updateBookIndex].fileCover,
+        fileName: fileName ? fileName : db[updateBookIndex].fileName,
+        fileBook: req.file ? req.file.path : db[updateBookIndex].fileBook,
       };
       db.splice(updateBookIndex, 1);
       store.writeInDB(updateBook);
@@ -122,7 +124,7 @@ class BooksController {
     const db = await store.readFromDB();
     const book = db.find((item) => item.id === id);
     if (book) {
-      res.download(book.fileBook, 'cover.png', (err) => {
+      res.download(book.fileBook, `${book.title}${path.extname(book.fileBook)}`, (err) => {
         if (err) {
           res.status(404).json();
         }

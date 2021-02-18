@@ -2,7 +2,7 @@ const multer = require('multer');
 
 const storage = multer.diskStorage({
   destination(req, file, cb) {
-    cb(null, './public/img');
+    cb(null, './public/books');
   },
   filename(req, file, cb) {
     cb(
@@ -12,7 +12,7 @@ const storage = multer.diskStorage({
   },
 });
 
-const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg'];
+const allowedTypes = ['application/pdf', 'application/msword', 'text/plain'];
 
 const fileFilter = (req, file, cb) => {
   if (allowedTypes.includes(file.mimetype)) {
